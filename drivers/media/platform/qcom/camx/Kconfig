@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: GPL-2.0-only
+config SPECTRA_CAMERA
+	tristate "Qualcomm Spectra Camera (CamX camera_kt) driver"
+	depends on ARCH_QCOM && MEDIA_SUPPORT && VIDEO_DEV && MEDIA_CONTROLLER && VIDEO_V4L2_SUBDEV_API
+	select SPECTRA_KT
+	select SPECTRA_ISP
+	select SPECTRA_ICP
+	select SPECTRA_JPEG
+	select SPECTRA_LRME
+	select SPECTRA_SENSOR
+	select SPECTRA_SENSOR_SYSFS_UTIL
+	select ENABLE_US_API
+	help
+	  Qualcomm Spectra Camera (CamX camera_kt) subsystem driver from
+	  qualcomm-linux/camera-driver, integrated in-tree for SM7125 (atoll)
+	  on Linux 7.3.
+
+config SPECTRA_KT
+	bool
+
+config SPECTRA_ISP
+	bool
+
+config SPECTRA_ICP
+	bool
+
+config SPECTRA_JPEG
+	bool
+
+config SPECTRA_LRME
+	bool
+
+config SPECTRA_SENSOR
+	bool
+
+config SPECTRA_SENSOR_SYSFS_UTIL
+	bool
+
+config ENABLE_US_API
+	bool

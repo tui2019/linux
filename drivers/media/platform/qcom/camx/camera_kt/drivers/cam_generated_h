@@ -1,0 +1,9 @@
+/* SPDX-License-Identifier: GPL-2.0-only */
+#ifndef _CAM_GENERATED_H_
+#define _CAM_GENERATED_H_
+
+#define CAMERA_COMPILE_TIME "sm7125-p613-7.3"
+#define CAMERA_COMPILE_HOST "p613-builder"
+#define CAMERA_CC_VERSION   "clang"
+
+#endif /* _CAM_GENERATED_H_ */

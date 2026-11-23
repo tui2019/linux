@@ -85,7 +85,8 @@ jobs:
             'CONFIG_SND_SOC_TAS2562=y' \
             'CONFIG_SND_SOC_WCD938X_SDW=y' \
             'CONFIG_QCOM_KGSL=y' \
-            'CONFIG_QCOM_KGSL_UPSTREAM=y'; do
+            'CONFIG_QCOM_KGSL_UPSTREAM=y' \
+            'CONFIG_SPECTRA_CAMERA=y'; do
             if ! grep -qx "$opt" out/.config; then
               echo "MISSING REQUIRED CONFIG: $opt (actual: $(grep -E "^(# )?${opt%%=*}[= ]" out/.config || echo unset))"
               missing=1
@@ -108,6 +109,7 @@ jobs:
             qcom/sm7125-samsung-gta4xlvewifi.dtb \
             drivers/kernelsu/ \
             drivers/gpu/msm/ \
+            drivers/media/platform/qcom/camx/ \
             drivers/gpu/drm/msm/msm_drv.o \
             drivers/firmware/qcom/qcom_tzmem.o \
             drivers/soc/qcom/qcom_pd_mapper.o \
