@@ -2048,18 +2048,28 @@ static void cam_cpas_update_monitor_array(struct cam_hw_info *cpas_hw,
 		entry->be_mnoc = cam_io_r_mb(rpmh_base + be_mnoc_offset);
 	}
 
-	entry->camnoc_fill_level[0] = cam_io_r_mb(
-		soc_info->reg_map[reg_camnoc].mem_base + 0xA20);
-	entry->camnoc_fill_level[1] = cam_io_r_mb(
-		soc_info->reg_map[reg_camnoc].mem_base + 0x1420);
-	entry->camnoc_fill_level[2] = cam_io_r_mb(
-		soc_info->reg_map[reg_camnoc].mem_base + 0x1A20);
+	/*
+	 * These hardcoded CAMNOC fill-level offsets (0xA20/0x1420/0x1A20)
+	 * belong to Titan 480/580 (cpastop_v480_100.h / cpastop_v580_100.h).
+	 * Reading them on Titan 150/170/175 (e.g., SM7125 0x150110) hits an
+	 * undecoded CAMNOC register hole and hangs the AHB bus until WDT reset.
+	 */
+	if (reg_camnoc >= 0 &&
+		(cpas_hw->soc_info.hw_version == CAM_CPAS_TITAN_480_V100 ||
+		 cpas_hw->soc_info.hw_version == CAM_CPAS_TITAN_580_V100)) {
+		entry->camnoc_fill_level[0] = cam_io_r_mb(
+			soc_info->reg_map[reg_camnoc].mem_base + 0xA20);
+		entry->camnoc_fill_level[1] = cam_io_r_mb(
+			soc_info->reg_map[reg_camnoc].mem_base + 0x1420);
+		entry->camnoc_fill_level[2] = cam_io_r_mb(
+			soc_info->reg_map[reg_camnoc].mem_base + 0x1A20);
 
-	if (cpas_hw->soc_info.hw_version == CAM_CPAS_TITAN_580_V100) {
-		entry->camnoc_fill_level[3] = cam_io_r_mb(
-			soc_info->reg_map[reg_camnoc].mem_base + 0x7620);
-		entry->camnoc_fill_level[4] = cam_io_r_mb(
-			soc_info->reg_map[reg_camnoc].mem_base + 0x7420);
+		if (cpas_hw->soc_info.hw_version == CAM_CPAS_TITAN_580_V100) {
+			entry->camnoc_fill_level[3] = cam_io_r_mb(
+				soc_info->reg_map[reg_camnoc].mem_base + 0x7620);
+			entry->camnoc_fill_level[4] = cam_io_r_mb(
+				soc_info->reg_map[reg_camnoc].mem_base + 0x7420);
+		}
 	}
 }
 

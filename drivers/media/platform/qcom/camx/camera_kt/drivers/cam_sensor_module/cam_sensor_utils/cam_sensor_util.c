@@ -1369,6 +1369,10 @@ int32_t msm_camera_fill_vreg_params(
 			if (j == num_vreg)
 				power_setting[i].seq_val = INVALID_VREG;
 			break;
+		case SENSOR_CUSTOM_REG3:
+		case SENSOR_CUSTOM_REG4:
+			power_setting[i].seq_val = INVALID_VREG;
+			break;
 		default:
 			break;
 		}
@@ -2393,8 +2397,16 @@ int cam_sensor_core_power_up(struct cam_sensor_power_ctrl_t *ctrl,
 		case SENSOR_VAF_PWDM:
 		case SENSOR_CUSTOM_REG1:
 		case SENSOR_CUSTOM_REG2:
-			if (power_setting->seq_val == INVALID_VREG)
+		case SENSOR_CUSTOM_REG3:
+		case SENSOR_CUSTOM_REG4:
+			if (power_setting->seq_val == INVALID_VREG) {
+				if (gpio_num_info &&
+				    gpio_num_info->valid[power_setting->seq_type])
+					msm_cam_sensor_handle_reg_gpio(
+						power_setting->seq_type,
+						gpio_num_info, 1);
 				break;
+			}
 
 			if (power_setting->seq_val >= CAM_VREG_MAX) {
 				CAM_ERR(CAM_SENSOR, "vreg index %d >= max %d",
@@ -2508,6 +2520,8 @@ power_up_failed:
 		case SENSOR_VAF_PWDM:
 		case SENSOR_CUSTOM_REG1:
 		case SENSOR_CUSTOM_REG2:
+		case SENSOR_CUSTOM_REG3:
+		case SENSOR_CUSTOM_REG4:
 			if (power_setting->seq_val < num_vreg) {
 				CAM_DBG(CAM_SENSOR, "Disable Regulator");
 				vreg_idx = power_setting->seq_val;
@@ -2674,8 +2688,16 @@ int cam_sensor_util_power_down(struct cam_sensor_power_ctrl_t *ctrl,
 		case SENSOR_VAF_PWDM:
 		case SENSOR_CUSTOM_REG1:
 		case SENSOR_CUSTOM_REG2:
-			if (pd->seq_val == INVALID_VREG)
+		case SENSOR_CUSTOM_REG3:
+		case SENSOR_CUSTOM_REG4:
+			if (pd->seq_val == INVALID_VREG) {
+				if (gpio_num_info &&
+				    gpio_num_info->valid[pd->seq_type])
+					msm_cam_sensor_handle_reg_gpio(
+						pd->seq_type, gpio_num_info,
+						GPIOF_OUT_INIT_LOW);
 				break;
+			}
 
 			ps = msm_camera_get_power_settings(
 				ctrl, pd->seq_type,

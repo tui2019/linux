@@ -202,11 +202,11 @@
 
 		cam_vio-supply = <&vreg_l18a_3p0>;
 		cam_vaf-supply = <&vreg_l5a_2p7>;
-		regulator-names = "cam_vio", "cam_vaf";
+		regulator-names = "cam_vio", "cam_vaf", "cam_vana", "cam_vdig";
 		rgltr-cntrl-support;
-		rgltr-min-voltage = <1800000 2800000>;
-		rgltr-max-voltage = <1800000 2800000>;
-		rgltr-load-current = <200000 200000>;
+		rgltr-min-voltage = <1800000 2800000 0 0>;
+		rgltr-max-voltage = <1800000 2800000 0 0>;
+		rgltr-load-current = <200000 200000 0 0>;
 		power-domains = <&camcc TITAN_TOP_GDSC>;
 
 		gpio-no-mux = <0>;
@@ -441,7 +441,6 @@
 					  <0 250000>,
 					  <0 250000>;
 			client-id-based;
-			control-camnoc-axi-clk;
 			camnoc-bus-width = <16>;
 			camnoc-axi-clk-bw-margin-perc = <10>;
 			client-names =
@@ -962,11 +961,11 @@
 
 				cam_vio-supply = <&vreg_l18a_3p0>;
 				cam_vaf-supply = <&vreg_l5a_2p7>;
-				regulator-names = "cam_vio", "cam_vaf";
+				regulator-names = "cam_vio", "cam_vaf", "cam_vana", "cam_vdig";
 				rgltr-cntrl-support;
-				rgltr-min-voltage = <1800000 2800000>;
-				rgltr-max-voltage = <1800000 2800000>;
-				rgltr-load-current = <200000 200000>;
+				rgltr-min-voltage = <1800000 2800000 0 0>;
+				rgltr-max-voltage = <1800000 2800000 0 0>;
+				rgltr-load-current = <200000 200000 0 0>;
 				power-domains = <&camcc TITAN_TOP_GDSC>;
 
 				gpio-no-mux = <0>;
@@ -1011,11 +1010,11 @@
 				eeprom-src = <&eeprom1>;
 
 				cam_vio-supply = <&vreg_l18a_3p0>;
-				regulator-names = "cam_vio";
+				regulator-names = "cam_vio", "cam_vana", "cam_vdig";
 				rgltr-cntrl-support;
-				rgltr-min-voltage = <1800000>;
-				rgltr-max-voltage = <1800000>;
-				rgltr-load-current = <200000>;
+				rgltr-min-voltage = <1800000 0 0>;
+				rgltr-max-voltage = <1800000 0 0>;
+				rgltr-load-current = <200000 0 0>;
 				power-domains = <&camcc TITAN_TOP_GDSC>;
 
 				gpio-no-mux = <0>;
@@ -1060,11 +1059,11 @@
 				eeprom-src = <&eeprom1>;
 
 				cam_vio-supply = <&vreg_l18a_3p0>;
-				regulator-names = "cam_vio";
+				regulator-names = "cam_vio", "cam_vana", "cam_vdig";
 				rgltr-cntrl-support;
-				rgltr-min-voltage = <1800000>;
-				rgltr-max-voltage = <1800000>;
-				rgltr-load-current = <200000>;
+				rgltr-min-voltage = <1800000 0 0>;
+				rgltr-max-voltage = <1800000 0 0>;
+				rgltr-load-current = <200000 0 0>;
 				power-domains = <&camcc TITAN_TOP_GDSC>;
 
 				gpio-no-mux = <0>;
@@ -1104,11 +1103,11 @@
 				sub-type = <2>;
 
 				cam_vio-supply = <&vreg_l18a_3p0>;
-				regulator-names = "cam_vio";
+				regulator-names = "cam_vio", "cam_vana", "cam_vdig";
 				rgltr-cntrl-support;
-				rgltr-min-voltage = <1800000>;
-				rgltr-max-voltage = <1800000>;
-				rgltr-load-current = <200000>;
+				rgltr-min-voltage = <1800000 0 0>;
+				rgltr-max-voltage = <1800000 0 0>;
+				rgltr-load-current = <200000 0 0>;
 				power-domains = <&camcc TITAN_TOP_GDSC>;
 
 				gpio-no-mux = <0>;

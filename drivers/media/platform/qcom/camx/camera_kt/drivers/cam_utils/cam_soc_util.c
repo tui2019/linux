@@ -511,7 +511,8 @@ int cam_soc_util_set_src_clk_rate(struct cam_hw_soc_info *soc_info,
 			apply_level);
 	}
 
-	if (soc_info->src_clk_idx >= 0) {
+	if (soc_info->src_clk_idx >= 0 &&
+	    of_find_property(soc_info->dev->of_node, "operating-points-v2", NULL)) {
 		rc = dev_pm_opp_set_rate(soc_info->dev,
 			soc_info->clk_rate[apply_level][soc_info->src_clk_idx]);
 		if (rc && rc != -ENODEV) {
@@ -731,7 +732,8 @@ int cam_soc_util_clk_enable_default(struct cam_hw_soc_info *soc_info,
 	if (soc_info->cam_cx_ipeak_enable)
 		cam_cx_ipeak_update_vote_cx_ipeak(soc_info, apply_level);
 
-	if (soc_info->src_clk_idx >= 0) {
+	if (soc_info->src_clk_idx >= 0 &&
+	    of_find_property(soc_info->dev->of_node, "operating-points-v2", NULL)) {
 		rc = dev_pm_opp_set_rate(soc_info->dev,
 			soc_info->clk_rate[apply_level][soc_info->src_clk_idx]);
 		if (rc && rc != -ENODEV) {
@@ -800,7 +802,8 @@ void cam_soc_util_clk_disable_default(struct cam_hw_soc_info *soc_info)
 	if (soc_info->cam_cx_ipeak_enable)
 		cam_cx_ipeak_unvote_cx_ipeak(soc_info);
 
-	dev_pm_opp_set_rate(soc_info->dev, 0);
+	if (of_find_property(soc_info->dev->of_node, "operating-points-v2", NULL))
+		dev_pm_opp_set_rate(soc_info->dev, 0);
 	for (i = soc_info->num_clk - 1; i >= 0; i--)
 		cam_soc_util_clk_disable(soc_info->clk[i],
 			soc_info->clk_name[i]);
@@ -1033,7 +1036,8 @@ int cam_soc_util_set_clk_rate_level(struct cam_hw_soc_info *soc_info,
 	if (soc_info->cam_cx_ipeak_enable)
 		cam_cx_ipeak_update_vote_cx_ipeak(soc_info, apply_level);
 
-	if (soc_info->src_clk_idx >= 0) {
+	if (soc_info->src_clk_idx >= 0 &&
+	    of_find_property(soc_info->dev->of_node, "operating-points-v2", NULL)) {
 		rc = dev_pm_opp_set_rate(soc_info->dev,
 			soc_info->clk_rate[apply_level][soc_info->src_clk_idx]);
 		if (rc && rc != -ENODEV) {
@@ -1788,7 +1792,7 @@ int cam_soc_util_configure_pd(struct cam_hw_soc_info *soc_info)
 	}
 
 	soc_info->genpd = devm_kmalloc_array(soc_info->dev, soc_info->num_genpd,
-					     sizeof(struct device), GFP_KERNEL);
+					     sizeof(struct device *), GFP_KERNEL);
 	if (!soc_info->genpd) {
 		CAM_ERR(CAM_UTIL,
 			"devm_kmalloc_array failed for dev %s, num_genpd %d",
