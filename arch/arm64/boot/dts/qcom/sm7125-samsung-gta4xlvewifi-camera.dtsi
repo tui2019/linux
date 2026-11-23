@@ -603,6 +603,42 @@
 						traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
 						parent-node = <&cam_mnoc_sf0>;
 					};
+
+					lrme0-wr {
+						cell-index = <15>;
+						node-name = "lrme0_wr";
+						client-name = "lrmecpas0";
+						traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
+						traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
+						parent-node = <&cam_mnoc_sf0>;
+					};
+
+					icp0-wr {
+						cell-index = <16>;
+						node-name = "icp0_wr";
+						client-name = "icp0";
+						traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
+						traffic-transaction-type = <CAM_CPAS_TRANSACTION_WRITE>;
+						parent-node = <&cam_mnoc_sf0>;
+					};
+
+					jpeg-enc0-rd {
+						cell-index = <17>;
+						node-name = "jpeg_enc0_rd";
+						client-name = "jpeg-enc0";
+						traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
+						traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
+						parent-node = <&cam_mnoc_sf0>;
+					};
+
+					jpeg-dma0-rd {
+						cell-index = <18>;
+						node-name = "jpeg_dma0_rd";
+						client-name = "jpeg-dma0";
+						traffic-data = <CAM_CPAS_PATH_DATA_ALL>;
+						traffic-transaction-type = <CAM_CPAS_TRANSACTION_READ>;
+						parent-node = <&cam_mnoc_sf0>;
+					};
 				};
 			};
 		};
@@ -641,7 +677,7 @@
 				 <&camcc CAM_CC_CAMNOC_AXI_CLK>;
 			clock-rates = <0 0 0 0 0>;
 			clock-cntl-level = "svs";
-			cdm-client-names = "ife";
+			cdm-client-names = "ife", "ife3", "vfe", "jpegenc", "jpegdma", "lrmecdm";
 			status = "okay";
 		};
 
