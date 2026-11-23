@@ -359,7 +359,7 @@
 				compatible = "qcom,msm-cam-smmu-cb";
 				iommus = <&apps_smmu 0x0d60 0x0>,
 					 <&apps_smmu 0x0d61 0x0>;
-				cam-smmu-label = "cpas-cdm0";
+				cam-smmu-label = "cpas-cdm";
 				iova-mem-map {
 					iova-mem-region-io {
 						iova-region-name = "io";
