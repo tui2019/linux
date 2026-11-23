@@ -419,8 +419,15 @@ static int cam_soc_util_set_clk_rate(struct clk *clk, const char *clk_name,
 	int rc = 0;
 	long clk_rate_round = -1;
 
-	if (!clk || !clk_name)
+	if (!clk_name)
 		return -EINVAL;
+
+	/* Always-on CCF clocks (e.g., GCC_CAMERA_AHB_CLK) return NULL */
+	if (!clk) {
+		if (applied_clk_rate)
+			*applied_clk_rate = 0;
+		return 0;
+	}
 
 	CAM_DBG(CAM_UTIL, "set %s, rate %lld", clk_name, clk_rate);
 	if (clk_rate > 0) {
@@ -504,14 +511,18 @@ int cam_soc_util_set_src_clk_rate(struct cam_hw_soc_info *soc_info,
 			apply_level);
 	}
 
-	rc = dev_pm_opp_set_rate(soc_info->dev,
-			  soc_info->clk_rate[apply_level][soc_info->src_clk_idx]);
-	if (rc && rc != -ENODEV) {
-		CAM_ERR(CAM_UTIL,
-			"Unable to set operating point for dev %s clk_name %s rc %d",
-			soc_info->dev_name, soc_info->clk_name[soc_info->src_clk_idx],
-			rc);
-		return rc;
+	if (soc_info->src_clk_idx >= 0) {
+		rc = dev_pm_opp_set_rate(soc_info->dev,
+			soc_info->clk_rate[apply_level][soc_info->src_clk_idx]);
+		if (rc && rc != -ENODEV) {
+			CAM_ERR(CAM_UTIL,
+				"Unable to set operating point for dev %s clk_name %s rc %d",
+				soc_info->dev_name,
+				soc_info->clk_name[soc_info->src_clk_idx],
+				rc);
+			return rc;
+		}
+		rc = 0;
 	}
 
 	rc = cam_soc_util_set_clk_rate(clk,
@@ -552,13 +563,15 @@ int cam_soc_util_set_src_clk_rate(struct cam_hw_soc_info *soc_info,
 
 int cam_soc_util_clk_put(struct clk **clk)
 {
-	if (!(*clk)) {
+	if (!clk) {
 		CAM_ERR(CAM_UTIL, "Invalid params clk");
 		return -EINVAL;
 	}
 
-	clk_put(*clk);
-	*clk = NULL;
+	if (*clk) {
+		clk_put(*clk);
+		*clk = NULL;
+	}
 
 	return 0;
 }
@@ -648,8 +661,14 @@ int cam_soc_util_clk_enable(struct clk *clk, const char *clk_name,
 {
 	int rc = 0;
 
-	if (!clk || !clk_name)
+	if (!clk_name)
 		return -EINVAL;
+
+	if (!clk) {
+		if (applied_clock_rate)
+			*applied_clock_rate = 0;
+		return 0;
+	}
 
 	rc = cam_soc_util_set_clk_rate(clk, clk_name, clk_rate,
 		applied_clock_rate);
@@ -667,8 +686,11 @@ int cam_soc_util_clk_enable(struct clk *clk, const char *clk_name,
 
 int cam_soc_util_clk_disable(struct clk *clk, const char *clk_name)
 {
-	if (!clk || !clk_name)
+	if (!clk_name)
 		return -EINVAL;
+
+	if (!clk)
+		return 0;
 
 	CAM_DBG(CAM_UTIL, "disable %s", clk_name);
 	clk_disable_unprepare(clk);
@@ -709,14 +731,18 @@ int cam_soc_util_clk_enable_default(struct cam_hw_soc_info *soc_info,
 	if (soc_info->cam_cx_ipeak_enable)
 		cam_cx_ipeak_update_vote_cx_ipeak(soc_info, apply_level);
 
-	rc = dev_pm_opp_set_rate(soc_info->dev,
+	if (soc_info->src_clk_idx >= 0) {
+		rc = dev_pm_opp_set_rate(soc_info->dev,
 			soc_info->clk_rate[apply_level][soc_info->src_clk_idx]);
-	if (rc) {
-		CAM_ERR(CAM_UTIL,
-			"Unable to set operating point for dev %s clk_name %s rc %d",
-			soc_info->dev_name, soc_info->clk_name[soc_info->src_clk_idx],
-			rc);
-		return rc;
+		if (rc && rc != -ENODEV) {
+			CAM_ERR(CAM_UTIL,
+				"Unable to set operating point for dev %s clk_name %s rc %d",
+				soc_info->dev_name,
+				soc_info->clk_name[soc_info->src_clk_idx],
+				rc);
+			return rc;
+		}
+		rc = 0;
 	}
 
 
@@ -1007,14 +1033,18 @@ int cam_soc_util_set_clk_rate_level(struct cam_hw_soc_info *soc_info,
 	if (soc_info->cam_cx_ipeak_enable)
 		cam_cx_ipeak_update_vote_cx_ipeak(soc_info, apply_level);
 
-	rc = dev_pm_opp_set_rate(soc_info->dev,
-			  soc_info->clk_rate[apply_level][soc_info->src_clk_idx]);
-	if (rc && rc != -ENODEV) {
-		CAM_ERR(CAM_UTIL,
-			"Unable to set operating point for dev %s clk_name %s rc %d",
-			soc_info->dev_name, soc_info->clk_name[soc_info->src_clk_idx],
-			rc);
-		return rc;
+	if (soc_info->src_clk_idx >= 0) {
+		rc = dev_pm_opp_set_rate(soc_info->dev,
+			soc_info->clk_rate[apply_level][soc_info->src_clk_idx]);
+		if (rc && rc != -ENODEV) {
+			CAM_ERR(CAM_UTIL,
+				"Unable to set operating point for dev %s clk_name %s rc %d",
+				soc_info->dev_name,
+				soc_info->clk_name[soc_info->src_clk_idx],
+				rc);
+			return rc;
+		}
+		rc = 0;
 	}
 
 	for (i = 0; i < soc_info->num_clk; i++) {
@@ -1887,7 +1917,7 @@ int cam_soc_util_request_platform_resource(
 		if (rc) {
 			CAM_ERR(CAM_UTIL, "irq request fail");
 			rc = -EBUSY;
-			goto put_regulator;
+			goto disable_pm;
 		}
 		disable_irq(soc_info->irq_num);
 		soc_info->irq_data = irq_data;
@@ -1897,10 +1927,11 @@ int cam_soc_util_request_platform_resource(
 	for (i = 0; i < soc_info->num_clk; i++) {
 		soc_info->clk[i] = clk_get(soc_info->dev,
 			soc_info->clk_name[i]);
-		if (!soc_info->clk[i]) {
-			CAM_ERR(CAM_UTIL, "get failed for %s",
-				soc_info->clk_name[i]);
-			rc = -ENOENT;
+		if (IS_ERR(soc_info->clk[i])) {
+			rc = PTR_ERR(soc_info->clk[i]);
+			CAM_ERR(CAM_UTIL, "get failed for %s rc=%d",
+				soc_info->clk_name[i], rc);
+			soc_info->clk[i] = NULL;
 			goto put_clk;
 		}
 	}
@@ -1940,6 +1971,16 @@ put_clk:
 		devm_free_irq(soc_info->dev,
 			soc_info->irq_num, irq_data);
 	}
+
+disable_pm:
+	pm_runtime_disable(soc_info->dev);
+	for (i = 0; i < soc_info->num_genpd; i++) {
+		if (soc_info->genpd && soc_info->genpd[i]) {
+			dev_pm_domain_detach(soc_info->genpd[i], true);
+			soc_info->genpd[i] = NULL;
+		}
+	}
+	i = -1;
 
 put_regulator:
 	if (i == -1)

@@ -231,12 +231,12 @@ static int cam_eeprom_i2c_driver_probe(struct i2c_client *client)
 	rc = cam_eeprom_update_i2c_info(e_ctrl, &soc_private->i2c_info);
 	if (rc) {
 		CAM_ERR(CAM_EEPROM, "failed: to update i2c info rc %d", rc);
-		goto free_soc;
+		goto release_pd;
 	}
 
 	rc = cam_eeprom_init_subdev(e_ctrl);
 	if (rc)
-		goto free_soc;
+		goto release_pd;
 
 	if (soc_private->i2c_info.slave_addr != 0)
 		e_ctrl->io_master_info.client->addr =
@@ -249,6 +249,8 @@ static int cam_eeprom_i2c_driver_probe(struct i2c_client *client)
 	e_ctrl->cam_eeprom_state = CAM_EEPROM_INIT;
 
 	return rc;
+release_pd:
+	cam_eeprom_release_power_domain(e_ctrl);
 free_soc:
 	kfree(soc_private);
 ectrl_free:
@@ -605,6 +607,7 @@ struct platform_driver cam_eeprom_platform_driver = {
 
 static const struct i2c_device_id cam_eeprom_i2c_id[] = {
 	{ "msm_eeprom", (kernel_ulong_t)NULL},
+	{ "eeprom", (kernel_ulong_t)NULL},
 	{ }
 };
 
@@ -614,10 +617,18 @@ static struct i2c_driver cam_eeprom_i2c_driver = {
 	.remove = cam_eeprom_i2c_driver_remove,
 	.driver = {
 		.name = "msm_eeprom",
+		.of_match_table = cam_eeprom_dt_match,
 	},
 };
 
+static const struct spi_device_id cam_eeprom_spi_id[] = {
+	{ "eeprom", 0 },
+	{ "qcom,eeprom", 0 },
+	{ }
+};
+
 static struct spi_driver cam_eeprom_spi_driver = {
+	.id_table = cam_eeprom_spi_id,
 	.driver = {
 		.name = "qcom_eeprom",
 		.owner = THIS_MODULE,

@@ -254,7 +254,7 @@ static int32_t cam_actuator_i2c_driver_probe(struct i2c_client *client)
 
 	rc = cam_actuator_init_subdev(a_ctrl);
 	if (rc)
-		goto free_soc;
+		goto release_pd;
 
 	if (soc_private->i2c_info.slave_addr != 0)
 		a_ctrl->io_master_info.client->addr =
@@ -288,6 +288,8 @@ static int32_t cam_actuator_i2c_driver_probe(struct i2c_client *client)
 
 unreg_subdev:
 	cam_unregister_subdev(&(a_ctrl->v4l2_dev_str));
+release_pd:
+	cam_actuator_release_power_domain(a_ctrl);
 free_soc:
 	kfree(soc_private);
 free_ctrl:
