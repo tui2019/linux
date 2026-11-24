@@ -433,11 +433,13 @@
 					     "cam_hf_0_mnoc",
 					     "cam_hf_1_mnoc",
 					     "cam_sf_0_mnoc";
-			cam-ahb-num-cases = <6>;
+			cam-ahb-num-cases = <8>;
 			cam-ahb-bw-KBps = <0 0>,
+					  <0 89500>,
 					  <0 89500>,
 					  <0 125000>,
 					  <0 125000>,
+					  <0 250000>,
 					  <0 250000>,
 					  <0 250000>;
 			client-id-based;
@@ -682,7 +684,7 @@
 
 		cam_csiphy0: qcom,csiphy@ac65000 {
 			cell-index = <0>;
-			compatible = "qcom,csiphy-v1.2.2", "qcom,csiphy";
+			compatible = "qcom,csiphy-v1.2.5", "qcom,csiphy";
 			reg = <0x0ac65000 0x1000>;
 			reg-names = "csiphy";
 			reg-cam-base = <0x65000>;
@@ -723,7 +725,7 @@
 
 		cam_csiphy1: qcom,csiphy@ac66000 {
 			cell-index = <1>;
-			compatible = "qcom,csiphy-v1.2.2", "qcom,csiphy";
+			compatible = "qcom,csiphy-v1.2.5", "qcom,csiphy";
 			reg = <0x0ac66000 0x1000>;
 			reg-names = "csiphy";
 			reg-cam-base = <0x66000>;
@@ -764,7 +766,7 @@
 
 		cam_csiphy2: qcom,csiphy@ac67000 {
 			cell-index = <2>;
-			compatible = "qcom,csiphy-v1.2.2", "qcom,csiphy";
+			compatible = "qcom,csiphy-v1.2.5", "qcom,csiphy";
 			reg = <0x0ac67000 0x1000>;
 			reg-names = "csiphy";
 			reg-cam-base = <0x67000>;
@@ -805,7 +807,7 @@
 
 		cam_csiphy3: qcom,csiphy@ac68000 {
 			cell-index = <3>;
-			compatible = "qcom,csiphy-v1.2.2", "qcom,csiphy";
+			compatible = "qcom,csiphy-v1.2.5", "qcom,csiphy";
 			reg = <0x0ac68000 0x1000>;
 			reg-names = "csiphy";
 			reg-cam-base = <0x68000>;

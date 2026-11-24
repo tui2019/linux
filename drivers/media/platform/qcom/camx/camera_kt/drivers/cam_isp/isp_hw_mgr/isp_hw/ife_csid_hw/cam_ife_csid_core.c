@@ -875,16 +875,17 @@ int cam_ife_csid_cid_reserve(struct cam_ife_csid_hw *csid_hw,
 		csid_hw->csid_info->phy_num_mask =
 			csid_hw->csid_info->csid_reg->csi2_reg->csi2_rx_phy_num_mask;
 		break;
-		case CAM_CPAS_TITAN_165_V100:
-			CAM_INFO(CAM_ISP, "Hw version is 165_100");
-			/* For Unification between Full IFE and IFE Lite for
-			 * Titan 165 updating correct phy mask to support 5
-			 * CSIPHY hardware.
-			 */
-
-			csid_hw->csid_info->phy_num_mask = 0x7;
+	case CAM_CPAS_TITAN_165_V100:
+		CAM_INFO(CAM_ISP, "Hw version is 165_100");
+		/* For Unification between Full IFE and IFE Lite for
+		 * Titan 165 updating correct phy mask to support 5
+		 * CSIPHY hardware.
+		 */
+		csid_hw->csid_info->phy_num_mask = 0x7;
 		break;
 	default:
+		csid_hw->csid_info->phy_num_mask =
+			csid_hw->csid_info->csid_reg->csi2_reg->csi2_rx_phy_num_mask;
 		break;
 	}
 	CAM_DBG(CAM_ISP, "Reserve_cnt %u", csid_hw->csi2_reserve_cnt);
@@ -2607,6 +2608,7 @@ static int cam_ife_csid_init_config_rdi_path(
 	uint32_t path_format = 0, plain_fmt = 0, val = 0, id;
 	uint32_t format_measure_addr, camera_hw_version;
 	uint32_t packing_fmt = 0, in_bpp = 0;
+	bool has_rpp_packing;
 
 	path_data = (struct cam_ife_csid_path_cfg   *) res->res_priv;
 	csid_reg = csid_hw->csid_info->csid_reg;
@@ -2619,11 +2621,30 @@ static int cam_ife_csid_init_config_rdi_path(
 		return -EINVAL;
 	}
 
+	rc = cam_cpas_get_cpas_hw_version(&camera_hw_version);
+	if (rc) {
+		CAM_ERR(CAM_ISP, "Failed to get HW version rc:%d", rc);
+		camera_hw_version = 0;
+	}
+	CAM_DBG(CAM_ISP, "HW version: %x", camera_hw_version);
+
+	has_rpp_packing =
+		(camera_hw_version == CAM_CPAS_TITAN_480_V100 ||
+		camera_hw_version == CAM_CPAS_TITAN_175_V130 ||
+		camera_hw_version == CAM_CPAS_TITAN_580_V100 ||
+		camera_hw_version == CAM_CPAS_TITAN_570_V200 ||
+		camera_hw_version == CAM_CPAS_TITAN_165_V100);
+
 	rc = cam_ife_csid_get_format_rdi(path_data->in_format,
 		path_data->out_format, &path_format, &plain_fmt, &packing_fmt,
-		path_data->crop_enable || path_data->drop_enable, &in_bpp);
+		has_rpp_packing &&
+		(path_data->crop_enable || path_data->drop_enable), &in_bpp);
 	if (rc)
 		return rc;
+
+	/* if path decode format is payload only then RDI crop is not applied */
+	if (path_format == 0xF)
+		path_data->crop_enable = 0;
 
 	/*
 	 * RDI path config and enable the time stamp capture
@@ -2640,18 +2661,7 @@ static int cam_ife_csid_init_config_rdi_path(
 		csid_reg->cmn_reg->crop_v_en_shift_val) |
 		(1 << 2) | 3;
 
-	rc = cam_cpas_get_cpas_hw_version(&camera_hw_version);
-	if (rc) {
-		CAM_ERR(CAM_ISP, "Failed to get HW version rc:%d", rc);
-		camera_hw_version = 0;
-	}
-	CAM_DBG(CAM_ISP, "HW version: %x", camera_hw_version);
-
-	if (camera_hw_version == CAM_CPAS_TITAN_480_V100 ||
-		camera_hw_version == CAM_CPAS_TITAN_175_V130 ||
-		camera_hw_version == CAM_CPAS_TITAN_580_V100 ||
-		camera_hw_version == CAM_CPAS_TITAN_570_V200 ||
-		camera_hw_version == CAM_CPAS_TITAN_165_V100) {
+	if (has_rpp_packing) {
 		val |= (path_data->drop_enable <<
 			csid_reg->cmn_reg->drop_h_en_shift_val) |
 			(path_data->drop_enable <<
