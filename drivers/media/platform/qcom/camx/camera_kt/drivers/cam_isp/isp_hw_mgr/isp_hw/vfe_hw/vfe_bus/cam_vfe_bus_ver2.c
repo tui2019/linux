@@ -2960,6 +2960,8 @@ static void cam_vfe_bus_update_ubwc_meta_addr(
 	}
 
 	switch (camera_hw_version) {
+	case CAM_CPAS_TITAN_150_V100:
+	case CAM_CPAS_TITAN_150_V110:
 	case CAM_CPAS_TITAN_170_V100:
 	case CAM_CPAS_TITAN_170_V110:
 	case CAM_CPAS_TITAN_170_V120:
@@ -3194,6 +3196,8 @@ static int cam_vfe_bus_update_ubwc_regs(
 		goto end;
 	}
 	switch (camera_hw_version) {
+	case CAM_CPAS_TITAN_150_V100:
+	case CAM_CPAS_TITAN_150_V110:
 	case CAM_CPAS_TITAN_170_V100:
 	case CAM_CPAS_TITAN_170_V110:
 	case CAM_CPAS_TITAN_170_V120:

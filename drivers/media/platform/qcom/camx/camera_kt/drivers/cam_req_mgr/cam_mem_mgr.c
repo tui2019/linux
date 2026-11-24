@@ -368,7 +368,9 @@ end:
 int cam_mem_mgr_cache_ops(struct cam_mem_cache_ops_cmd *cmd)
 {
 	int rc = 0, idx;
-	uint32_t cache_dir;
+#if !IS_REACHABLE(CONFIG_DMABUF_HEAPS)
+	uint32_t cache_dir = DMA_BIDIRECTIONAL;
+#endif
 
 	if (!atomic_read(&cam_mem_mgr_state)) {
 		CAM_ERR(CAM_MEM, "failed. mem_mgr not initialized");
@@ -397,9 +399,39 @@ int cam_mem_mgr_cache_ops(struct cam_mem_cache_ops_cmd *cmd)
 	}
 
 #if IS_REACHABLE(CONFIG_DMABUF_HEAPS)
-	CAM_DBG(CAM_MEM, "Calling dmap buf APIs for cache operations");
-	cache_dir = DMA_BIDIRECTIONAL;
-#elif defined(CONFIG_CAM_ION_SUPPORT)
+	CAM_DBG(CAM_MEM, "Calling dma_buf APIs for cache op %u", cmd->mem_cache_ops);
+	switch (cmd->mem_cache_ops) {
+	case CAM_MEM_CLEAN_CACHE:
+		rc = dma_buf_end_cpu_access(tbl.bufq[idx].dma_buf,
+			DMA_TO_DEVICE);
+		if (rc)
+			CAM_ERR(CAM_MEM, "dma end access failed rc=%d", rc);
+		goto end;
+	case CAM_MEM_INV_CACHE:
+		rc = dma_buf_begin_cpu_access(tbl.bufq[idx].dma_buf,
+			DMA_FROM_DEVICE);
+		if (rc)
+			CAM_ERR(CAM_MEM, "dma begin access failed rc=%d", rc);
+		goto end;
+	case CAM_MEM_CLEAN_INV_CACHE:
+		rc = dma_buf_end_cpu_access(tbl.bufq[idx].dma_buf,
+			DMA_TO_DEVICE);
+		if (rc) {
+			CAM_ERR(CAM_MEM, "dma end access failed rc=%d", rc);
+			goto end;
+		}
+		rc = dma_buf_begin_cpu_access(tbl.bufq[idx].dma_buf,
+			DMA_FROM_DEVICE);
+		if (rc)
+			CAM_ERR(CAM_MEM, "dma begin access failed rc=%d", rc);
+		goto end;
+	default:
+		CAM_ERR(CAM_MEM, "invalid cache ops :%d", cmd->mem_cache_ops);
+		rc = -EINVAL;
+		goto end;
+	}
+#else
+#ifdef CONFIG_CAM_ION_SUPPORT
 	unsigned long dmabuf_flag = 0;
 	rc = dma_buf_get_flags(tbl.bufq[idx].dma_buf, &dmabuf_flag);
 	if (rc) {
@@ -443,6 +475,7 @@ int cam_mem_mgr_cache_ops(struct cam_mem_cache_ops_cmd *cmd)
 		CAM_ERR(CAM_MEM, "dma end access failed rc=%d", rc);
 		goto end;
 	}
+#endif
 
 end:
 	mutex_unlock(&tbl.bufq[idx].q_lock);

@@ -1508,6 +1508,8 @@ static int cam_convert_hw_idx_to_ife_hw_num(int hw_idx)
 	rc = cam_cpas_get_cpas_hw_version(&hw_version);
 	if (!rc) {
 		switch (hw_version) {
+		case CAM_CPAS_TITAN_150_V100:
+		case CAM_CPAS_TITAN_150_V110:
 		case CAM_CPAS_TITAN_170_V100:
 		case CAM_CPAS_TITAN_170_V110:
 		case CAM_CPAS_TITAN_170_V120:
