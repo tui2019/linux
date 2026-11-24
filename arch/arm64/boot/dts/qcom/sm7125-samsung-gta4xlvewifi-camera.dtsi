@@ -1268,6 +1268,7 @@
 				      "camnoc_axi_clk",
 				      "icp_clk",
 				      "icp_clk_src";
+			src-clock-name = "icp_clk_src";
 			clocks = <&gcc GCC_CAMERA_AHB_CLK>,
 				 <&gcc GCC_CAMERA_HF_AXI_CLK>,
 				 <&camcc CAM_CC_FAST_AHB_CLK_SRC>,
