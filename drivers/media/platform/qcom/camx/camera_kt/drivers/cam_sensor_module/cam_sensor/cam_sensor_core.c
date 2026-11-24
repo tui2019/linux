@@ -5,6 +5,8 @@
  */
 
 #include <linux/module.h>
+#include <linux/delay.h>
+#include <linux/of.h>
 #include <cam_sensor_cmn_header.h>
 #include "cam_sensor_core.h"
 #include "cam_sensor_util.h"
@@ -14,6 +16,141 @@
 #include "cam_packet_util.h"
 #include "cam_hdmi_bdg_core.h"
 #include "cam_dp_bdg_core.h"
+
+#define GC5035_DD_AUTOLOAD_TOTAL_BAD_PIXEL	0x6c
+
+static struct cam_sensor_i2c_reg_array gc5035_dd_autoload_step1[] = {
+	{0xfa, 0x10, 0x00, 0x00},
+	{0xfe, 0x02, 0x00, 0x00},
+	{0x67, 0xc0, 0x00, 0x00},
+	{0x55, 0x80, 0x00, 0x00},
+	{0x65, 0x80, 0x00, 0x00},
+	{0x66, 0x03, 0x00, 0x00},
+};
+
+static struct cam_sensor_i2c_reg_array gc5035_dd_autoload_step3[] = {
+	{0xfe, 0x02, 0x00, 0x00},
+	{0xbe, 0x00, 0x00, 0x00},
+	{0xa9, 0x01, 0x00, 0x00},
+};
+
+static struct cam_sensor_i2c_reg_array gc5035_dd_autoload_qty1[] = {
+	{0x69, 0x00, 0x00, 0x00},
+	{0x6a, 0x70, 0x00, 0x00},
+	{0xf3, 0x20, 0x00, 0x00},
+};
+
+static struct cam_sensor_i2c_reg_array gc5035_dd_autoload_qty2[] = {
+	{0x6a, 0x78, 0x00, 0x00},
+	{0xf3, 0x20, 0x00, 0x00},
+};
+
+static struct cam_sensor_i2c_reg_array gc5035_dd_autoload_step4[] = {
+	{0x03, 0x00, 0x00, 0x00},
+	{0x04, 0x80, 0x00, 0x00},
+};
+
+static struct cam_sensor_i2c_reg_array gc5035_dd_autoload_step5[] = {
+	{0x09, 0x33, 0x00, 0x00},
+	{0xf3, 0x80, 0x00, 0x00},
+};
+
+static struct cam_sensor_i2c_reg_array gc5035_dd_autoload_step7[] = {
+	{0xfe, 0x02, 0x00, 0x00},
+	{0xbe, 0x01, 0x00, 0x00},
+	{0x09, 0x00, 0x00, 0x00},
+	{0x67, 0x00, 0x00, 0x00},
+	{0xfe, 0x01, 0x00, 0x00},
+	{0x80, 0x02, 0x00, 0x00},
+	{0xfe, 0x00, 0x00, 0x00},
+};
+
+static int32_t gc5035_otp_dd_autoload_process(struct cam_sensor_ctrl_t *s_ctrl)
+{
+	struct cam_sensor_i2c_reg_setting reg_setting = {0};
+	struct cam_sensor_i2c_reg_array reg_arr = {0};
+	uint32_t reg_val = 0;
+	uint16_t dd_num = 0;
+	int rc;
+
+	reg_setting.addr_type = CAMERA_SENSOR_I2C_TYPE_BYTE;
+	reg_setting.data_type = CAMERA_SENSOR_I2C_TYPE_BYTE;
+
+	reg_setting.reg_setting = gc5035_dd_autoload_step1;
+	reg_setting.size = ARRAY_SIZE(gc5035_dd_autoload_step1);
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	reg_setting.reg_setting = gc5035_dd_autoload_step3;
+	reg_setting.size = ARRAY_SIZE(gc5035_dd_autoload_step3);
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	reg_setting.reg_setting = gc5035_dd_autoload_qty1;
+	reg_setting.size = ARRAY_SIZE(gc5035_dd_autoload_qty1);
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	rc = camera_io_dev_read(&s_ctrl->io_master_info,
+		GC5035_DD_AUTOLOAD_TOTAL_BAD_PIXEL, &reg_val,
+		CAMERA_SENSOR_I2C_TYPE_BYTE, CAMERA_SENSOR_I2C_TYPE_BYTE);
+	if (rc < 0)
+		return rc;
+	dd_num += reg_val;
+
+	reg_setting.reg_setting = gc5035_dd_autoload_qty2;
+	reg_setting.size = ARRAY_SIZE(gc5035_dd_autoload_qty2);
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	rc = camera_io_dev_read(&s_ctrl->io_master_info,
+		GC5035_DD_AUTOLOAD_TOTAL_BAD_PIXEL, &reg_val,
+		CAMERA_SENSOR_I2C_TYPE_BYTE, CAMERA_SENSOR_I2C_TYPE_BYTE);
+	if (rc < 0)
+		return rc;
+	dd_num += reg_val;
+
+	reg_arr.reg_addr = 0x01;
+	reg_arr.reg_data = 0x00;
+	reg_setting.reg_setting = &reg_arr;
+	reg_setting.size = 1;
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	reg_arr.reg_addr = 0x02;
+	reg_arr.reg_data = dd_num;
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	reg_setting.reg_setting = gc5035_dd_autoload_step4;
+	reg_setting.size = ARRAY_SIZE(gc5035_dd_autoload_step4);
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	reg_setting.reg_setting = gc5035_dd_autoload_step5;
+	reg_setting.size = ARRAY_SIZE(gc5035_dd_autoload_step5);
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	msleep(4);
+
+	reg_setting.reg_setting = gc5035_dd_autoload_step7;
+	reg_setting.size = ARRAY_SIZE(gc5035_dd_autoload_step7);
+	rc = camera_io_dev_write(&s_ctrl->io_master_info, &reg_setting);
+	if (rc < 0)
+		return rc;
+
+	CAM_DBG(CAM_SENSOR, "GC5035 OTP DD autoload success: dd_num=%u", dd_num);
+	return 0;
+}
 
 
 static int cam_sensor_update_req_mgr(
@@ -1240,6 +1377,14 @@ int32_t cam_sensor_driver_cmd(struct cam_sensor_ctrl_t *s_ctrl,
 					rc);
 				delete_request(&s_ctrl->i2c_data.init_settings);
 				goto release_mutex;
+			}
+			if (of_property_read_bool(s_ctrl->soc_info.dev->of_node,
+				"samsung,gc5035-otp-dd-autoload")) {
+				rc = gc5035_otp_dd_autoload_process(s_ctrl);
+				if (rc < 0)
+					CAM_ERR(CAM_SENSOR,
+						"GC5035 OTP DD autoload failed rc=%d",
+						rc);
 			}
 			rc = delete_request(&s_ctrl->i2c_data.init_settings);
 			if (rc < 0) {

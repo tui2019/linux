@@ -6,6 +6,8 @@
 
 #include <linux/module.h>
 #include <linux/crc32.h>
+#include <linux/delay.h>
+#include <linux/of.h>
 #include <media/cam_sensor.h>
 
 #include "cam_eeprom_core.h"
@@ -15,6 +17,195 @@
 #include "cam_packet_util.h"
 
 #define MAX_READ_SIZE  0x7FFFF
+
+#define GC5035_OTP_PAGE_SELECT_REG	0xfe
+#define GC5035_OTP_BANK_SELECT_ADDR	0x0200
+#define GC5035_OTP_PAGE_START_ADDR	0x0200
+
+static struct cam_sensor_i2c_reg_array gc5035_load_otp_setfile_reg[] = {
+	{0xfc, 0x01, 0x00, 0x00},
+	{0xf4, 0x40, 0x00, 0x00},
+	{0xf5, 0xe9, 0x00, 0x00},
+	{0xf6, 0x14, 0x00, 0x00},
+	{0xf8, 0x49, 0x00, 0x00},
+	{0xf9, 0x82, 0x00, 0x00},
+	{0xfa, 0x00, 0x00, 0x00},
+	{0xfc, 0x81, 0x00, 0x00},
+	{0xfe, 0x00, 0x00, 0x00},
+	{0x36, 0x01, 0x00, 0x00},
+	{0xd3, 0x87, 0x00, 0x00},
+	{0x36, 0x00, 0x00, 0x00},
+	{0x33, 0x00, 0x00, 0x00},
+	{0xfe, 0x03, 0x00, 0x00},
+	{0x01, 0xe7, 0x00, 0x00},
+	{0xf7, 0x01, 0x00, 0x00},
+	{0xfc, 0x8f, 0x00, 0x00},
+	{0xfc, 0x8f, 0x00, 0x00},
+	{0xfc, 0x8e, 0x00, 0x00},
+	{0xfe, 0x00, 0x00, 0x00},
+	{0xee, 0x30, 0x00, 0x00},
+	{0x87, 0x18, 0x00, 0x00},
+	{0xfe, 0x01, 0x00, 0x00},
+	{0x8c, 0x90, 0x00, 0x00},
+	{0xfe, 0x00, 0x00, 0x00},
+};
+
+static struct cam_sensor_i2c_reg_array gc5035_init_read_otp_reg[] = {
+	{0xfa, 0x10, 0x00, 0x00},
+	{0xf5, 0xe9, 0x00, 0x00},
+	{0xfe, 0x02, 0x00, 0x00},
+	{0x67, 0xc0, 0x00, 0x00},
+	{0x59, 0x3f, 0x00, 0x00},
+	{0x55, 0x80, 0x00, 0x00},
+	{0x65, 0x80, 0x00, 0x00},
+	{0x66, 0x03, 0x00, 0x00},
+};
+
+static int cam_otp_gc5035_read(struct cam_eeprom_ctrl_t *e_ctrl,
+	uint32_t addr, uint8_t *memptr)
+{
+	int rc = 0, k;
+	struct cam_sensor_i2c_reg_setting i2c_reg_settings = {0};
+	struct cam_sensor_i2c_reg_array i2c_reg_array = {0};
+	uint32_t busy_data = 0;
+
+	i2c_reg_settings.addr_type = CAMERA_SENSOR_I2C_TYPE_BYTE;
+	i2c_reg_settings.data_type = CAMERA_SENSOR_I2C_TYPE_BYTE;
+	i2c_reg_settings.size = 1;
+	i2c_reg_settings.reg_setting = &i2c_reg_array;
+
+	/* OTP address bits [12:8] */
+	i2c_reg_array.reg_addr = 0x69;
+	i2c_reg_array.reg_data = ((addr * 8) & 0x1F00) >> 8;
+	rc = camera_io_dev_write(&e_ctrl->io_master_info, &i2c_reg_settings);
+	if (rc < 0)
+		return rc;
+
+	/* OTP address bits [7:0] */
+	i2c_reg_array.reg_addr = 0x6A;
+	i2c_reg_array.reg_data = (addr * 8) & 0x00FF;
+	rc = camera_io_dev_write(&e_ctrl->io_master_info, &i2c_reg_settings);
+	if (rc < 0)
+		return rc;
+
+	/* OTP read pulse */
+	i2c_reg_array.reg_addr = 0xF3;
+	i2c_reg_array.reg_data = 0x20;
+	rc = camera_io_dev_write(&e_ctrl->io_master_info, &i2c_reg_settings);
+	if (rc < 0)
+		return rc;
+
+	/* Poll OTP busy flag */
+	for (k = 0; k < 20; k++) {
+		rc = camera_io_dev_read(&e_ctrl->io_master_info, 0x6F,
+			&busy_data, CAMERA_SENSOR_I2C_TYPE_BYTE,
+			CAMERA_SENSOR_I2C_TYPE_BYTE);
+		if (rc < 0)
+			return rc;
+		if (busy_data & 0x04)
+			msleep(2);
+		else
+			break;
+	}
+
+	return camera_io_dev_read_seq(&e_ctrl->io_master_info, 0x6C, memptr,
+		CAMERA_SENSOR_I2C_TYPE_BYTE, CAMERA_SENSOR_I2C_TYPE_BYTE, 1);
+}
+
+static int cam_otp_gc5035_read_memory(struct cam_eeprom_ctrl_t *e_ctrl,
+	struct cam_eeprom_memory_block_t *block)
+{
+	int rc = 0, j, read_bytes = 0;
+	struct cam_eeprom_memory_map_t *emap = block->map;
+	struct cam_sensor_i2c_reg_setting load_otp = {
+		.reg_setting = gc5035_load_otp_setfile_reg,
+		.size = ARRAY_SIZE(gc5035_load_otp_setfile_reg),
+		.addr_type = CAMERA_SENSOR_I2C_TYPE_BYTE,
+		.data_type = CAMERA_SENSOR_I2C_TYPE_BYTE,
+		.delay = 50,
+	};
+	struct cam_sensor_i2c_reg_setting init_read = {
+		.reg_setting = gc5035_init_read_otp_reg,
+		.size = ARRAY_SIZE(gc5035_init_read_otp_reg),
+		.addr_type = CAMERA_SENSOR_I2C_TYPE_BYTE,
+		.data_type = CAMERA_SENSOR_I2C_TYPE_BYTE,
+		.delay = 10,
+	};
+	uint32_t otp_page = 0, offset = 0, addr, read_size;
+	uint8_t otp_bank = 0, *memptr;
+
+	rc = camera_io_dev_write(&e_ctrl->io_master_info, &load_otp);
+	if (rc < 0) {
+		CAM_ERR(CAM_EEPROM, "GC5035 OTP load setfile failed rc=%d", rc);
+		return rc;
+	}
+
+	rc = camera_io_dev_write(&e_ctrl->io_master_info, &init_read);
+	if (rc < 0) {
+		CAM_ERR(CAM_EEPROM, "GC5035 OTP init read failed rc=%d", rc);
+		return rc;
+	}
+
+	rc = camera_io_dev_read(&e_ctrl->io_master_info,
+		GC5035_OTP_PAGE_SELECT_REG, &otp_page,
+		CAMERA_SENSOR_I2C_TYPE_BYTE, CAMERA_SENSOR_I2C_TYPE_BYTE);
+	if (rc < 0)
+		return rc;
+
+	rc = cam_otp_gc5035_read(e_ctrl, GC5035_OTP_BANK_SELECT_ADDR, &otp_bank);
+	if (rc < 0)
+		return rc;
+
+	switch (otp_bank) {
+	case 1:
+		offset = 0x00;
+		break;
+	case 3:
+	case 7:
+		offset = 0x100;
+		break;
+	case 0xF:
+		offset = 0x180;
+		break;
+	default:
+		CAM_ERR(CAM_EEPROM, "GC5035 OTP invalid bank: 0x%x", otp_bank);
+		return -EINVAL;
+	}
+
+	msleep(10);
+	for (j = 1; j < block->num_map; j++) {
+		read_size = emap[j].mem.valid_size;
+		if (!read_size)
+			continue;
+		if (emap[j].mem.addr + read_size > block->num_data) {
+			CAM_ERR(CAM_EEPROM,
+				"GC5035 OTP map[%d] OOB addr=0x%x size=0x%x max=0x%x",
+				j, emap[j].mem.addr, read_size, block->num_data);
+			return -EINVAL;
+		}
+		memptr = block->mapdata + emap[j].mem.addr;
+		addr = emap[j].mem.addr + GC5035_OTP_PAGE_START_ADDR + offset;
+		while (read_size > 0) {
+			rc = cam_otp_gc5035_read(e_ctrl, addr, memptr);
+			if (rc < 0) {
+				CAM_ERR(CAM_EEPROM,
+					"GC5035 OTP read failed addr=0x%x rc=%d",
+					addr, rc);
+				return rc;
+			}
+			read_size--;
+			addr++;
+			memptr++;
+			read_bytes++;
+		}
+	}
+
+	CAM_INFO(CAM_EEPROM,
+		"GC5035 OTP read done: page=%u bank=0x%x offset=0x%x bytes=%d mod=%.11s",
+		otp_page, otp_bank, offset, read_bytes,
+		block->num_data >= 20 ? (char *)(block->mapdata + 9) : "");
+	return 0;
+}
 
 /**
  * cam_eeprom_read_memory() - read map data into buffer
@@ -1322,7 +1513,15 @@ static int32_t cam_eeprom_pkt_parse(struct cam_eeprom_ctrl_t *e_ctrl, void *arg)
 		}
 
 		e_ctrl->cam_eeprom_state = CAM_EEPROM_CONFIG;
-		rc = cam_eeprom_read_memory(e_ctrl, &e_ctrl->cal_data);
+		if (of_property_read_bool(e_ctrl->soc_info.dev->of_node,
+			"samsung,gc5035-otp")) {
+			memset(e_ctrl->cal_data.mapdata, 0xFF,
+				e_ctrl->cal_data.num_data);
+			rc = cam_otp_gc5035_read_memory(e_ctrl,
+				&e_ctrl->cal_data);
+		} else {
+			rc = cam_eeprom_read_memory(e_ctrl, &e_ctrl->cal_data);
+		}
 		if (rc) {
 			CAM_ERR(CAM_EEPROM,
 				"read_eeprom_memory failed");

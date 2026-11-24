@@ -1045,6 +1045,7 @@
 				clock-names = "cam_clk";
 				clock-cntl-level = "turbo";
 				clock-rates = <24000000>;
+				samsung,gc5035-otp-dd-autoload;
 			};
 
 			/* Front full CAM - 5MP Wide, GC5035 */
@@ -1094,6 +1095,7 @@
 				clock-names = "cam_clk";
 				clock-cntl-level = "turbo";
 				clock-rates = <24000000>;
+				samsung,gc5035-otp-dd-autoload;
 			};
 
 			eeprom1: qcom,eeprom@59 {
@@ -1103,6 +1105,7 @@
 				slave-addr = <0x6e>;
 				i2c-freq-mode = <1>;
 				sub-type = <2>;
+				samsung,gc5035-otp;
 
 				cam_vio-supply = <&vreg_l18a_3p0>;
 				regulator-names = "cam_vio", "cam_vana", "cam_vdig";
