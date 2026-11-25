@@ -1187,7 +1187,24 @@ int icnss_wlfw_bdf_dnld_send_sync(struct icnss_priv *priv, u32 bdf_type)
 	if (ret)
 		goto err_req_fw;
 
-	ret = firmware_request_nowarn(&fw_entry, filename, &priv->pdev->dev);
+	{
+		char qca_path[ICNSS_MAX_FILE_NAME + 16];
+
+		scnprintf(qca_path, sizeof(qca_path), "wlan/qca_cld/%s", filename);
+		ret = firmware_request_nowarn(&fw_entry, qca_path, &priv->pdev->dev);
+		if (ret && bdf_type == ICNSS_BDF_BIN) {
+			scnprintf(qca_path, sizeof(qca_path), "wlan/qca_cld/%s",
+				  BIN_BDF_FILE_NAME);
+			ret = firmware_request_nowarn(&fw_entry, qca_path,
+						      &priv->pdev->dev);
+		}
+		if (!ret) {
+			strscpy(filename, qca_path, sizeof(filename));
+		} else {
+			ret = firmware_request_nowarn(&fw_entry, filename,
+						      &priv->pdev->dev);
+		}
+	}
 	if (ret) {
 		icnss_pr_err("Failed to load %s: %s ret:%d\n",
 			     icnss_bdf_type_to_str(bdf_type), filename, ret);
@@ -1197,8 +1214,9 @@ int icnss_wlfw_bdf_dnld_send_sync(struct icnss_priv *priv, u32 bdf_type)
 	temp = fw_entry->data;
 	remaining = fw_entry->size;
 
-	icnss_pr_dbg("Downloading %s: %s, size: %u\n",
-		     icnss_bdf_type_to_str(bdf_type), filename, remaining);
+	icnss_pr_info("Downloading %s: %s (board_id=0x%x), size: %u\n",
+		      icnss_bdf_type_to_str(bdf_type), filename,
+		      priv->board_id, remaining);
 
 	while (remaining) {
 		req->valid = 1;
