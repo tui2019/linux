@@ -2,7 +2,7 @@
 
 subdir-ccflags-y += -I$(srctree)/drivers/net/wireless/cnss_platform/inc
 subdir-ccflags-y += -I$(srctree)/drivers/net/wireless/cnss_platform/cnss_utils
-subdir-ccflags-y += -Wno-error=unused-function -Wno-error=unused-variable
+subdir-ccflags-y += -Wno-error
 
 obj-$(CONFIG_CNSS_UTILS) += cnss_utils/
 obj-$(CONFIG_CNSS_GENL) += cnss_genl/
