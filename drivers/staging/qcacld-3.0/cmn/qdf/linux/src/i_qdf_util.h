@@ -26,6 +26,7 @@
 #define _I_QDF_UTIL_H
 
 #include <linux/compiler.h>
+#include <linux/hex.h>
 #include <linux/kernel.h>
 #include <linux/types.h>
 #include <linux/mm.h>

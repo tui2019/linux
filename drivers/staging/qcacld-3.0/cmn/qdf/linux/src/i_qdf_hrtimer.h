@@ -312,7 +312,7 @@ static inline bool __qdf_hrtimer_callback_running(__qdf_hrtimer_data_t *timer)
 {
 	struct hrtimer *hrtimer = &timer->u.hrtimer;
 
-	return hrtimer_callback_running(hrtimer);
+	return hrtimer_active(hrtimer) && !hrtimer_is_queued(hrtimer);
 }
 #else
 static inline bool __qdf_hrtimer_callback_running(__qdf_hrtimer_data_t *timer)
@@ -321,7 +321,7 @@ static inline bool __qdf_hrtimer_callback_running(__qdf_hrtimer_data_t *timer)
 	struct tasklet_hrtimer *tasklet_hrtimer = &timer->u.tasklet_hrtimer;
 
 	if (timer->ctx == QDF_CONTEXT_HARDWARE)
-		return hrtimer_callback_running(hrtimer);
+		return hrtimer_active(hrtimer) && !hrtimer_is_queued(hrtimer);
 	else
 		return hrtimer_callback_running(&tasklet_hrtimer->timer);
 }

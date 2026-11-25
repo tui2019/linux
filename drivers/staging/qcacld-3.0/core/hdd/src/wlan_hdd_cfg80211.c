@@ -34580,7 +34580,7 @@ static int wlan_hdd_cfg80211_tx_control_port(struct wiphy *wiphy,
 					     size_t len,
 					     const u8 *dest, const __be16 proto,
 					     bool unencrypted, int link_id,
-					     u64 *cookie)
+					     u64 cookie)
 {
 	struct hdd_adapter *adapter = WLAN_HDD_GET_PRIV_PTR(dev);
 
@@ -35783,18 +35783,131 @@ static void wlan_hdd_cfg80211_update_mgmt_frame_registrations(
 }
 #endif
 
+static int wlan_hdd_change_station_v7(struct wiphy *wiphy,
+				      struct wireless_dev *wdev,
+				      const u8 *mac,
+				      struct station_parameters *params)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_change_station(wiphy, wdev->netdev, mac, params);
+}
+
+static int wlan_hdd_add_key_v7(struct wiphy *wiphy,
+			       struct wireless_dev *wdev, int link_id,
+			       u8 key_index, bool pairwise,
+			       const u8 *mac_addr, struct key_params *params)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_cfg80211_add_key(wiphy, wdev->netdev, link_id,
+					 key_index, pairwise, mac_addr, params);
+}
+
+static int wlan_hdd_get_key_v7(struct wiphy *wiphy,
+			       struct wireless_dev *wdev, int link_id,
+			       u8 key_index, bool pairwise,
+			       const u8 *mac_addr, void *cookie,
+			       void (*callback)(void *cookie,
+						struct key_params *))
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_cfg80211_get_key(wiphy, wdev->netdev, link_id,
+					 key_index, pairwise, mac_addr, cookie,
+					 callback);
+}
+
+static int wlan_hdd_del_key_v7(struct wiphy *wiphy,
+			       struct wireless_dev *wdev, int link_id,
+			       u8 key_index, bool pairwise,
+			       const u8 *mac_addr)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_cfg80211_del_key(wiphy, wdev->netdev, link_id,
+					 key_index, pairwise, mac_addr);
+}
+
+static int wlan_hdd_remain_on_channel_v7(struct wiphy *wiphy,
+					 struct wireless_dev *wdev,
+					 struct ieee80211_channel *chan,
+					 unsigned int duration, u64 *cookie,
+					 const u8 *bssid)
+{
+	return wlan_hdd_cfg80211_remain_on_channel(wiphy, wdev, chan,
+						   duration, cookie);
+}
+
+static int wlan_hdd_set_default_mgmt_key_v7(struct wiphy *wiphy,
+					    struct wireless_dev *wdev,
+					    int link_id, u8 key_index)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_set_default_mgmt_key(wiphy, wdev->netdev, link_id,
+					     key_index);
+}
+
+static int wlan_hdd_set_default_beacon_key_v7(struct wiphy *wiphy,
+					      struct wireless_dev *wdev,
+					      int link_id, u8 key_index)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_cfg80211_set_default_beacon_key(wiphy, wdev->netdev,
+							link_id, key_index);
+}
+
+static int wlan_hdd_dump_station_v7(struct wiphy *wiphy,
+				    struct wireless_dev *wdev, int idx,
+				    u8 *mac, struct station_info *sinfo)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_cfg80211_dump_station(wiphy, wdev->netdev, idx, mac,
+					      sinfo);
+}
+
+static int wlan_hdd_get_station_v7(struct wiphy *wiphy,
+				   struct wireless_dev *wdev, const u8 *mac,
+				   struct station_info *sinfo)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_cfg80211_get_station(wiphy, wdev->netdev, mac, sinfo);
+}
+
+static int wlan_hdd_del_station_v7(struct wiphy *wiphy,
+				   struct wireless_dev *wdev,
+				   struct station_del_parameters *params)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_cfg80211_del_station(wiphy, wdev->netdev, params);
+}
+
+static int wlan_hdd_add_station_v7(struct wiphy *wiphy,
+				   struct wireless_dev *wdev, const u8 *mac,
+				   struct station_parameters *params)
+{
+	if (!wdev || !wdev->netdev)
+		return -EINVAL;
+	return wlan_hdd_cfg80211_add_station(wiphy, wdev->netdev, mac, params);
+}
+
 static struct cfg80211_ops wlan_hdd_cfg80211_ops = {
 	.add_virtual_intf = wlan_hdd_add_virtual_intf,
 	.del_virtual_intf = wlan_hdd_del_virtual_intf,
 	.change_virtual_intf = wlan_hdd_cfg80211_change_iface,
-	.change_station = wlan_hdd_change_station,
+	.change_station = wlan_hdd_change_station_v7,
 	.start_ap = wlan_hdd_cfg80211_start_ap,
 	.change_beacon = wlan_hdd_cfg80211_change_beacon,
 	.stop_ap = wlan_hdd_cfg80211_stop_ap,
 	.change_bss = wlan_hdd_cfg80211_change_bss,
-	.add_key = wlan_hdd_cfg80211_add_key,
-	.get_key = wlan_hdd_cfg80211_get_key,
-	.del_key = wlan_hdd_cfg80211_del_key,
+	.add_key = wlan_hdd_add_key_v7,
+	.get_key = wlan_hdd_get_key_v7,
+	.del_key = wlan_hdd_del_key_v7,
 	.set_default_key = wlan_hdd_cfg80211_set_default_key,
 	.scan = wlan_hdd_cfg80211_scan,
 	.connect = wlan_hdd_cfg80211_connect,
@@ -35802,21 +35915,21 @@ static struct cfg80211_ops wlan_hdd_cfg80211_ops = {
 	.set_wiphy_params = wlan_hdd_cfg80211_set_wiphy_params,
 	.set_tx_power = wlan_hdd_cfg80211_set_txpower,
 	.get_tx_power = wlan_hdd_cfg80211_get_txpower,
-	.remain_on_channel = wlan_hdd_cfg80211_remain_on_channel,
+	.remain_on_channel = wlan_hdd_remain_on_channel_v7,
 	.cancel_remain_on_channel = wlan_hdd_cfg80211_cancel_remain_on_channel,
 	.mgmt_tx = wlan_hdd_mgmt_tx,
 	.mgmt_tx_cancel_wait = wlan_hdd_cfg80211_mgmt_tx_cancel_wait,
-	.set_default_mgmt_key = wlan_hdd_set_default_mgmt_key,
+	.set_default_mgmt_key = wlan_hdd_set_default_mgmt_key_v7,
 #if defined (CFG80211_BIGTK_CONFIGURATION_SUPPORT) || \
 	    (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 7, 0))
-	.set_default_beacon_key = wlan_hdd_cfg80211_set_default_beacon_key,
+	.set_default_beacon_key = wlan_hdd_set_default_beacon_key_v7,
 #endif
 	.set_txq_params = wlan_hdd_set_txq_params,
-	.dump_station = wlan_hdd_cfg80211_dump_station,
-	.get_station = wlan_hdd_cfg80211_get_station,
+	.dump_station = wlan_hdd_dump_station_v7,
+	.get_station = wlan_hdd_get_station_v7,
 	.set_power_mgmt = wlan_hdd_cfg80211_set_power_mgmt,
-	.del_station = wlan_hdd_cfg80211_del_station,
-	.add_station = wlan_hdd_cfg80211_add_station,
+	.del_station = wlan_hdd_del_station_v7,
+	.add_station = wlan_hdd_add_station_v7,
 	.set_pmksa = wlan_hdd_cfg80211_set_pmksa,
 	.del_pmksa = wlan_hdd_cfg80211_del_pmksa,
 	.flush_pmksa = wlan_hdd_cfg80211_flush_pmksa,

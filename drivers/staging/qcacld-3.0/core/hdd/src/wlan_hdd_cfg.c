@@ -26,6 +26,7 @@
 /* Include Files */
 
 #include <linux/firmware.h>
+#include <linux/hex.h>
 #include <linux/string.h>
 #include <wlan_hdd_includes.h>
 #include <wlan_hdd_main.h>
