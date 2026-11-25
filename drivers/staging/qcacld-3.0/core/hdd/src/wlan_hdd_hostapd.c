@@ -3216,7 +3216,7 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_context *sap_ctx,
 			if (notify_new_sta &&
 			    hdd_sap_is_recv_assoc_link(hdd_ctx->psoc,
 						       event->staMac.bytes))
-				cfg80211_new_sta(dev,
+				cfg80211_new_sta(dev->ieee80211_ptr,
 						 (const u8 *)&event->
 						 staMac.bytes[0],
 						 sta_info, GFP_KERNEL);
@@ -3396,7 +3396,7 @@ QDF_STATUS hdd_hostapd_sap_event_cb(struct sap_context *sap_ctx,
 		if ((adapter->device_mode != QDF_P2P_GO_MODE ||
 		     (!cds_is_driver_recovering())) &&
 		     is_last_sta_info) {
-			cfg80211_del_sta(dev,
+			cfg80211_del_sta(dev->ieee80211_ptr,
 					 (const u8 *)&sta_addr.bytes[0],
 					 GFP_KERNEL);
 			hdd_debug("indicate sta deletion event");
