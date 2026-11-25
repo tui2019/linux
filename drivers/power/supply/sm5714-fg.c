@@ -38,6 +38,15 @@
 
 #define SM5714_FG_POLL_MS		10000
 
+/*
+ * Samsung health HAL (vendor.samsung.hardware.health-service) reads
+ * /sys/class/power_supply/<battery>/online as SEC_BATTERY_CABLE_*:
+ * 0 = UNKNOWN (triggers One UI "incompatible charger" + 0% icon),
+ * 1 = NONE (discharging), 4 = USB.
+ */
+#define SEC_BATTERY_CABLE_NONE		1
+#define SEC_BATTERY_CABLE_USB		4
+
 struct sm5714_fg {
 	struct power_supply *psy;
 	struct i2c_client *i2c;
@@ -51,6 +60,7 @@ struct sm5714_fg {
 
 static enum power_supply_property sm5714_fg_props[] = {
 	POWER_SUPPLY_PROP_PRESENT,
+	POWER_SUPPLY_PROP_ONLINE,
 	POWER_SUPPLY_PROP_STATUS,
 	POWER_SUPPLY_PROP_HEALTH,
 	POWER_SUPPLY_PROP_TECHNOLOGY,
@@ -173,6 +183,29 @@ static int sm5714_fg_read_temp(struct sm5714_fg *drv, int *temp)
 	return 0;
 }
 
+static int sm5714_fg_get_online(int *online)
+{
+	union power_supply_propval val;
+	struct power_supply *psy;
+	int ret;
+
+	psy = power_supply_get_by_name("sm5714_charger");
+	if (!psy) {
+		*online = SEC_BATTERY_CABLE_NONE;
+		return 0;
+	}
+
+	ret = power_supply_get_property(psy, POWER_SUPPLY_PROP_ONLINE, &val);
+	power_supply_put(psy);
+	if (ret) {
+		*online = SEC_BATTERY_CABLE_NONE;
+		return 0;
+	}
+
+	*online = val.intval ? SEC_BATTERY_CABLE_USB : SEC_BATTERY_CABLE_NONE;
+	return 0;
+}
+
 static int sm5714_fg_get_property(struct power_supply *psy,
 				  enum power_supply_property psp,
 				  union power_supply_propval *val)
@@ -183,6 +216,10 @@ static int sm5714_fg_get_property(struct power_supply *psy,
 	switch (psp) {
 	case POWER_SUPPLY_PROP_PRESENT:
 		val->intval = 1;
+		break;
+	case POWER_SUPPLY_PROP_ONLINE:
+		sm5714_fg_get_online(&tmp);
+		val->intval = tmp;
 		break;
 	case POWER_SUPPLY_PROP_HEALTH:
 		val->intval = POWER_SUPPLY_HEALTH_GOOD;
