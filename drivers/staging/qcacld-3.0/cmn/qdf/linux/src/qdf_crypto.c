@@ -174,8 +174,13 @@ static inline void leftshift_onebit(const uint8_t *input, uint8_t *output)
 }
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 4, 0))
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0))
+static void
+generate_subkey(const struct aes_enckey *aes_ctx, uint8_t *k1, uint8_t *k2)
+#else
 static void
 generate_subkey(struct crypto_aes_ctx *aes_ctx, uint8_t *k1, uint8_t *k2)
+#endif
 {
 	uint8_t l[AES_BLOCK_SIZE] = {
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -263,13 +268,21 @@ int qdf_crypto_aes_128_cmac(const uint8_t *key, const uint8_t *data,
 	uint8_t k1[AES_KEYSIZE_128], k2[AES_KEYSIZE_128];
 	int cmp_blk;
 	int i, num_block = (len + 15) / AES_BLOCK_SIZE;
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0))
+	struct aes_enckey aes_ctx;
+#else
 	struct crypto_aes_ctx aes_ctx;
+#endif
 	int ret;
 
 	/*
 	 * Calculate MIC and then copy
 	 */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(7, 0, 0))
+	ret = aes_prepareenckey(&aes_ctx, key, AES_KEYSIZE_128);
+#else
 	ret = aes_expandkey(&aes_ctx, key, AES_KEYSIZE_128);
+#endif
 	if (ret) {
 		qdf_err("aes_expandkey failed (%d)", ret);
 		return ret;
