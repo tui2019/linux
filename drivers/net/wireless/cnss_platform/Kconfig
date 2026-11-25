@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: GPL-2.0-only
+
+menu "Qualcomm CNSS / ICNSS WLAN Platform"
+
+config CNSS_UTILS
+	tristate "CNSS utilities support"
+	help
+	  Add CNSS utilities support for the WLAN driver module.
+
+config CNSS_QMI_SVC
+	tristate "CNSS QMI SVC support"
+	depends on QCOM_QMI_HELPERS
+	help
+	  Add CNSS QMI service definitions for WLAN firmware QMI communication.
+
+config CNSS_GENL
+	tristate "CNSS Generic Netlink Socket Driver"
+	help
+	  Generic netlink family "CLD80211" for QCACLD userspace communication.
+
+config WCNSS_MEM_PRE_ALLOC
+	tristate "WCNSS pre-alloc memory support"
+	help
+	  Pre-allocate memory pools for the QCACLD WLAN driver.
+
+config ICNSS2
+	tristate "Platform driver for Q6 integrated WLAN (ICNSS2)"
+	depends on QCOM_QMI_HELPERS && QCOM_PDR_HELPERS
+	select CNSS_UTILS
+	help
+	  Platform driver for Qualcomm Q6 integrated WLAN connectivity
+	  subsystem (WCN3990/ADRASTEA and WCN6750/WCN6450/WCN7750).
+
+config ICNSS2_DEBUG
+	bool "ICNSS2 Platform Driver Debug Support"
+	depends on ICNSS2
+
+config ICNSS2_QMI
+	bool "ICNSS2 Platform Driver QMI support"
+	depends on ICNSS2
+	select CNSS_QMI_SVC
+
+config CNSS_QCA6750
+	bool "Enable ICNSS QCA6750 chipset specific changes"
+	depends on ICNSS2
+
+endmenu
