@@ -396,8 +396,13 @@ static int pktlog_sysctl_register(struct hif_opaque_softc *scn)
 
 	/* and register everything */
 	/* register_sysctl_table changed from 2.6.21 onwards */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(6, 11, 0))
+	pl_info_lnx->sysctl_header =
+		register_sysctl_sz(buf, pl_info_lnx->sysctls, 9);
+#else
 	pl_info_lnx->sysctl_header =
 		register_sysctl(buf, pl_info_lnx->sysctls);
+#endif
 
 	if (!pl_info_lnx->sysctl_header) {
 		qdf_nofl_info("%s: failed to register sysctls!", proc_name);
@@ -580,8 +585,10 @@ attach_fail2:
 	remove_proc_entry(proc_name, g_pktlog_pde);
 
 attach_fail1:
-	if (pl_dev)
+	if (pl_dev) {
 		kfree(pl_dev->pl_info);
+		pl_dev->pl_info = NULL;
+	}
 
 	return -EINVAL;
 }
