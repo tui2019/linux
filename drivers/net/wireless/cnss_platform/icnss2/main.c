@@ -3234,8 +3234,8 @@ static int icnss_wpss_early_ssr_register_notifier(struct icnss_priv *priv)
 	priv->wpss_early_ssr_nb.notifier_call = icnss_wpss_early_notifier_nb;
 
 	priv->wpss_early_notify_handler =
-		qcom_register_early_ssr_notifier("wpss",
-						 &priv->wpss_early_ssr_nb);
+		qcom_register_ssr_notifier("wpss",
+					   &priv->wpss_early_ssr_nb);
 
 	if (IS_ERR_OR_NULL(priv->wpss_early_notify_handler)) {
 		ret = PTR_ERR(priv->wpss_early_notify_handler);
@@ -3457,8 +3457,8 @@ static void icnss_wpss_early_ssr_unregister_notifier(struct icnss_priv *priv)
 	if (IS_ERR_OR_NULL(priv->wpss_early_notify_handler))
 		return;
 
-	qcom_unregister_early_ssr_notifier(priv->wpss_early_notify_handler,
-					   &priv->wpss_early_ssr_nb);
+	qcom_unregister_ssr_notifier(priv->wpss_early_notify_handler,
+				     &priv->wpss_early_ssr_nb);
 	priv->wpss_early_notify_handler = NULL;
 }
 
@@ -3904,6 +3904,7 @@ int icnss_thermal_cdev_register(struct device *dev, unsigned long max_state,
 	if (of_find_property(dev_node, "#cooling-cells", NULL)) {
 		icnss_tcdev->tcdev = thermal_of_cooling_device_register(
 						dev_node,
+						icnss_tcdev->tcdev_id,
 						cdev_node_name, icnss_tcdev,
 						&icnss_cooling_ops);
 		if (IS_ERR_OR_NULL(icnss_tcdev->tcdev)) {
@@ -6109,12 +6110,16 @@ static void icnss_deinitialize_mem_pool(void)
 
 static void register_rproc_restart_level_notifier(void)
 {
+#ifdef CONFIG_ANDROID_VENDOR_HOOKS
 	register_trace_android_vh_rproc_recovery_set(rproc_restart_level_notifier, NULL);
+#endif
 }
 
 static void unregister_rproc_restart_level_notifier(void)
 {
+#ifdef CONFIG_ANDROID_VENDOR_HOOKS
 	unregister_trace_android_vh_rproc_recovery_set(rproc_restart_level_notifier, NULL);
+#endif
 }
 
 void icnss_get_cpumask_for_wlan_rx_interrupts(struct device *dev,
