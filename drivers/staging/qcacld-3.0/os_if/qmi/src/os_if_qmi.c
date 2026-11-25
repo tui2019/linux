@@ -72,7 +72,7 @@ QDF_STATUS os_if_qmi_connect_to_svc(struct qmi_handle *qmi_hdl,
 	sq.sq_node = qmi_svc->node;
 	sq.sq_port = qmi_svc->port;
 
-	ret = kernel_connect(qmi_hdl->sock, (struct sockaddr *)&sq,
+	ret = kernel_connect(qmi_hdl->sock, (struct sockaddr_unsized *)&sq,
 			     sizeof(sq), 0);
 	if (ret < 0) {
 		osif_err("Failed to connect to QMI remote service %d", ret);
